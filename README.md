@@ -4,6 +4,8 @@
 [![GoDoc](https://godoc.org/github.com/shopspring/decimal?status.svg)](https://godoc.org/github.com/shopspring/decimal) 
 [![Go Report Card](https://goreportcard.com/badge/github.com/shopspring/decimal)](https://goreportcard.com/report/github.com/shopspring/decimal)
 
+From pavand239: (Un)Marshal to/from decimal128 BSON for mongo-driver
+
 Arbitrary-precision fixed-point decimal numbers in go.
 
 _Note:_ Decimal library can "only" represent numbers with a maximum of 2^31 digits after the decimal point.

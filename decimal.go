@@ -4,14 +4,14 @@
 //
 // The best way to create a new Decimal is to use decimal.NewFromString, ex:
 //
-//     n, err := decimal.NewFromString("-123.4567")
-//     n.String() // output: "-123.4567"
+//	n, err := decimal.NewFromString("-123.4567")
+//	n.String() // output: "-123.4567"
 //
 // To use Decimal as part of a struct:
 //
-//     type Struct struct {
-//         Number Decimal
-//     }
+//	type Struct struct {
+//	    Number Decimal
+//	}
 //
 // Note: This can "only" represent numbers with a maximum of 2^31 digits after the decimal point.
 package decimal
@@ -25,6 +25,10 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"go.mongodb.org/mongo-driver/bson/bsontype"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/x/bsonx/bsoncore"
 )
 
 // DivisionPrecision is the number of decimal places in the result when it
@@ -1320,6 +1324,27 @@ func (d Decimal) Truncate(precision int32) Decimal {
 	return d
 }
 
+func (d Decimal) MarshalBSONValue() (bsontype.Type, []byte, error) {
+	dStr := d.String()
+	d128, err := primitive.ParseDecimal128(dStr)
+
+	return bsontype.Decimal128, bsoncore.AppendDecimal128(nil, d128), err
+}
+
+func (d *Decimal) UnmarshalBSONValue(t bsontype.Type, b []byte) error {
+	d128, _, ok := bsoncore.ReadDecimal128(b)
+	if !ok {
+		return fmt.Errorf("decimal UnmarshalBSONValue error")
+	}
+
+	err := d.UnmarshalJSON([]byte(d128.String()))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // UnmarshalJSON implements the json.Unmarshaler interface.
 func (d *Decimal) UnmarshalJSON(decimalBytes []byte) error {
 	if string(decimalBytes) == "null" {
@@ -1637,6 +1662,30 @@ func (d NullDecimal) Value() (driver.Value, error) {
 	return d.Decimal.Value()
 }
 
+func (d NullDecimal) MarshalBSONValue() (bsontype.Type, []byte, error) {
+	if d.Valid {
+		return bsontype.Null, nil, nil
+	}
+	dStr := d.Decimal.String()
+	d128, err := primitive.ParseDecimal128(dStr)
+
+	return bsontype.Decimal128, bsoncore.AppendDecimal128(nil, d128), err
+}
+
+func (d *NullDecimal) UnmarshalBSONValue(t bsontype.Type, b []byte) error {
+	d128, _, ok := bsoncore.ReadDecimal128(b)
+	if !ok {
+		return fmt.Errorf("decimal UnmarshalBSONValue error")
+	}
+
+	err := d.UnmarshalJSON([]byte(d128.String()))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // UnmarshalJSON implements the json.Unmarshaler interface.
 func (d *NullDecimal) UnmarshalJSON(decimalBytes []byte) error {
 	if string(decimalBytes) == "null" {
@@ -1654,6 +1703,7 @@ func (d NullDecimal) MarshalJSON() ([]byte, error) {
 	}
 	return d.Decimal.MarshalJSON()
 }
+
 
 // UnmarshalText implements the encoding.TextUnmarshaler interface for XML
 // deserialization
