@@ -1663,7 +1663,7 @@ func (d NullDecimal) Value() (driver.Value, error) {
 }
 
 func (d NullDecimal) MarshalBSONValue() (bsontype.Type, []byte, error) {
-	if d.Valid {
+	if !d.Valid {
 		return bsontype.Null, nil, nil
 	}
 	dStr := d.Decimal.String()
