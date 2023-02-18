@@ -1673,6 +1673,10 @@ func (d NullDecimal) MarshalBSONValue() (bsontype.Type, []byte, error) {
 }
 
 func (d *NullDecimal) UnmarshalBSONValue(t bsontype.Type, b []byte) error {
+	if (t == bsontype.Null) {
+		d.Valid = false
+		return nil
+	}
 	d128, _, ok := bsoncore.ReadDecimal128(b)
 	if !ok {
 		return fmt.Errorf("decimal UnmarshalBSONValue error")
